@@ -1,4 +1,5 @@
 const multer = require('multer');
+const { createBook } = require('../controllers/book');
 
 const MIME_TYPES = {
     'image/jpg': 'jpg',
@@ -12,10 +13,9 @@ const storage = multer.diskStorage({
     },
     filename: (req, file, callback) => {
         const name = file.originalname.split(' ').join('_');
-        console.log(file)
         const extension = MIME_TYPES[file.mimetype];
         callback(null, name + '_' + Date.now() + '.' + extension);
     }
 });
 
-module.exports= multer({ storage }).single('image');
+module.exports= multer({ storage }).single('image'), createBook;

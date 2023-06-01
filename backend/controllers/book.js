@@ -3,6 +3,7 @@ const Rating = require('../models/Rating');
 const fs = require('fs');
 
 exports.createBook = (req, res, next) => {
+    
     const bookObject = req.body.book;
     delete bookObject._id;
     delete bookObject._userId
@@ -11,11 +12,14 @@ exports.createBook = (req, res, next) => {
         userId: req.auth.userId,
         imageUrl: req.body.imageUrl
     });   
-    console.log("book", book)
+    console.log("book", bookObject)
 
     book.save()
-        .then(() => res.status(201).json({ message: 'livre enregistré'}))
-        .catch(error => res.status(400).json({ error }));
+        .then(() => {
+            res.status(201).json({ message: 'livre enregistré' });
+            next(); 
+        })
+        .catch(error => res.status(400).json({ error }))
 } 
 
 
@@ -28,6 +32,7 @@ exports.createRating = (req, res, next) => {
       userId: req.auth.userId,
       grade: req.grade.ratings
     });
+    console.log("ratings", rating)
     const totalGrade = Object.values(ratingsObject).reduce((sum, grade) => sum + grade, 0);
     const averageRating = totalGrade / Object.values(ratingsObject).length;
   
