@@ -3,35 +3,39 @@ const Rating = require('../models/Rating');
 const fs = require('fs');
 
 exports.createBook = (req, res, next) => {
-    const bookObject = JSON.parse(req.body.book);
+    const bookObject = req.body.book;
     delete bookObject._id;
     delete bookObject._userId
     const book = new Book({
-        ...req.body,
+        ...bookObject,
         userId: req.auth.userId,
-        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-    });
+        imageUrl: req.body.imageUrl
+    });   
+    console.log("book", book)
+
     book.save()
         .then(() => res.status(201).json({ message: 'livre enregistré'}))
         .catch(error => res.status(400).json({ error }));
-// next;
 } 
 
 
 exports.createRating = (req, res, next) => {
     const ratingsObject = JSON.parse(req.body.ratings);
     delete ratingsObject._id;
-    delete ratingsObject._userId
+    delete ratingsObject._userId;
     const rating = new Rating({
-        ...req.ratings,
-        userId: req.auth.userId,
-        grade : req.grade.ratings
-
-    })
-    rating.save()
-    .then(() => res.status(201).json({ message: 'note enregistrée'}))
-    .catch(error => res.status(400).json({ error }));
-}
+      ...req.ratings,
+      userId: req.auth.userId,
+      grade: req.grade.ratings
+    });
+    const totalGrade = Object.values(ratingsObject).reduce((sum, grade) => sum + grade, 0);
+    const averageRating = totalGrade / Object.values(ratingsObject).length;
+  
+    rating
+      .save()
+      .then(() => res.status(201).json({ message: 'Note enregistrée', averageRating }))
+      .catch(error => res.status(400).json({ error }));
+  };
 
 exports.modifyBook = (req, res, next) => {
     const bookObject = req.file ? {
@@ -61,8 +65,8 @@ exports.modifyBook = (req, res, next) => {
             if (book.userId != req.auth.userId) {
                 res.status(401).json({message: 'Non autorisé'});
             } else {
-                const filename = book.imageUrl.split('/images/')[1];
-                fs.unlink(`images/${filename}`, () => {
+                const filename = book.imageUrl.split('/image/')[1];
+                fs.unlink(`image/${filename}`, () => {
                     Book.deleteOne({_id: req.params.id})
                         .then(() => { res.status(200).json({message: 'Livre supprimé !'})})
                         .catch(error => res.status(401).json({ error }));
