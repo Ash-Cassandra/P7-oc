@@ -4,13 +4,13 @@ const fs = require('fs');
 
 exports.createBook = (req, res, next) => {
     
-    const bookObject = req.body.book;
+    const bookObject = JSON.parse(req.body.book);
     delete bookObject._id;
     delete bookObject._userId
     const book = new Book({
         ...bookObject,
         userId: req.auth.userId,
-        imageUrl: req.body.imageUrl
+        imageUrl: `${req.protocol}://${req.get('host')}/image/${req.file.filename}`
     });   
     console.log("book", bookObject)
 
@@ -18,6 +18,7 @@ exports.createBook = (req, res, next) => {
         .then(() => {
             res.status(201).json({ message: 'livre enregistré' });
             next(); 
+            console.log('bookSave', book)
         })
         .catch(error => res.status(400).json({ error }))
 } 
