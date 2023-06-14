@@ -23,8 +23,8 @@ exports.createBook = (req, res, next) => {
 
 exports.createRating = (req, res, next) => {
     const userId = req.auth.userId;
-    const grade = req.body.grade; 
-
+    console.log('body', req.body)
+    const grade = req.body.rating; 
     console.log("id livre", { _id: req.params.id })
 
     Book.findOne({ _id: req.params.id })
@@ -34,19 +34,21 @@ exports.createRating = (req, res, next) => {
         if (userRated) {
           return res.status(400).json({ error: "Vous avez déjà noté ce livre." });
         }
-  
+        
         const rating = {
           userId: userId,
           grade: grade
         };
-  
+
         book.ratings.push(rating); /* ajout de la note au tableau */
         book.averageRating = (book.averageRating * (book.ratings.length - 1) + grade) / book.ratings.length; /* calcul de la note moyenne*/
-  
+    console.log('grade', grade)
+    console.log('average', book.averageRating)
+
         book
           .save()
           .then(updatedBook => {
-            res.status(200).json({ message: 'Livre noté avec succès', book: updatedBook });
+            res.status(200).json(updatedBook);
             next();
             console.log('updatedBook', updatedBook);
           })
