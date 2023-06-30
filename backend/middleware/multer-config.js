@@ -1,5 +1,10 @@
 const multer = require('multer');
+const sharp = require('sharp');
+const fs = require('fs');
+const path = require('path');
+
 const { createBook } = require('../controllers/book');
+
 
 const MIME_TYPES = {
     'image/jpg': 'jpg',
@@ -9,13 +14,46 @@ const MIME_TYPES = {
 
 const storage = multer.diskStorage({
     destination: (req, file, callback) => {
-        callback(null, 'image')
+        callback(null, 'image/');
     },
+    //renommer l'image
     filename: (req, file, callback) => {
-        const name = file.originalname.split(' ').join('_');
-        const extension = MIME_TYPES[file.mimetype];
-        callback(null, name + '_' + Date.now() + '.' + extension);
+        const name = file.originalname.split(' ').join('_').split('.')[0];
+         const extension = MIME_TYPES[file.mimetype];
+        callback(null,  name + '_' + Date.now() + '.' + extension);
     }
 });
 
-module.exports= multer({ storage }).single('image'), createBook;
+const upload = multer({ storage });
+
+module.exports = {
+  functionSharp: (req, res, next) => {
+    upload.single('image')(req, res, function(err) {
+      if (err) {
+        return res.status(400).json({err});
+      }
+       // Vérifier si aucune image n'a été téléchargée
+       if (!req.file) {
+        return res.status(400).json({ error: 'Veuillez fournir une image' });
+      }
+      // Utiliser Sharp pour redimensionner l'image
+      sharp(req.file.path)
+        .resize(1200)
+        .webp()
+        .toFile(req.file.path.split('.')[0] + '.webp')
+        .then(function(info) {
+          // Supprimer le fichier d'origine
+          fs.unlink(req.file.path, function(err) {
+            if (err) {
+              console.error({err});
+            }
+            next();
+          });
+        })
+        .catch(function(err) {
+          console.log(err);
+          return res.status(500).json({ err});
+        });
+    });
+  }
+};

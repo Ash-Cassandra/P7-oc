@@ -1,31 +1,32 @@
 const Book = require('../models/Book');
 const fs = require('fs');
 
+
+
 exports.createBook = (req, res, next) => {
     const bookObject = JSON.parse(req.body.book);
     delete bookObject._id;
-    delete bookObject._userId
-    const book = new Book({
-        ...bookObject,
-        userId: req.auth.userId,
-        imageUrl: `${req.protocol}://${req.get('host')}/image/${req.file.filename}`
-    });   
-
-    book.save()
-        .then(() => {
-            res.status(201).json({ message: 'livre enregistré' });
-            next(); 
-            console.log('bookSave', book)
-        })
-        .catch(error => res.status(400).json({ error }))
-} 
+    delete bookObject._userId;
+    let pathImage = req.file.path.split('.')[0] + '.webp';
+    
+        const book = new Book({
+            ...bookObject,
+            userId: req.auth.userId,
+            imageUrl: `${req.protocol}://${req.get('host')}/${pathImage.replace('\\', '/')}`
+        });   
+        
+        book.save()
+            .then(() => {
+                res.status(201).json({ message: 'Livre enregistré' });
+                next(); 
+            })
+            .catch(error => res.status(400).json({ error }));
+    };
 
 
 exports.createRating = (req, res, next) => {
     const userId = req.auth.userId;
-    console.log('body', req.body)
     const grade = req.body.rating; 
-    console.log("id livre", { _id: req.params.id })
 
     Book.findOne({ _id: req.params.id })
       .then(book => {
@@ -39,9 +40,9 @@ exports.createRating = (req, res, next) => {
           userId: userId,
           grade: grade
         };
-
-        book.ratings.push(rating); /* ajout de la note au tableau */
-        book.averageRating = (book.averageRating * (book.ratings.length - 1) + grade) / book.ratings.length; /* calcul de la note moyenne*/
+        // ajout de la note au tableau
+        book.ratings.push(rating); 
+        book.averageRating = ((book.averageRating * (book.ratings.length - 1) + grade) / book.ratings.length).toFixed(1); /* calcul de la note moyenne*/
     console.log('grade', grade)
     console.log('average', book.averageRating)
 
@@ -68,9 +69,11 @@ exports.bestRating = (req, res, next) => {
     
 
 exports.modifyBook = (req, res, next) => {
+    let pathImage = req.file.path.split('.')[0] + '.webp'
+
     const bookObject = req.file ? {
         ...JSON.parse(req.body.book),
-        imageUrl: `${req.protocol}://${req.get('host')}/image/${req.file.filename}`
+        imageUrl: `${req.protocol}://${req.get('host')}/${pathImage.replace('\\', '/')}`
     } : { ...req.body };
   
     delete bookObject._userId;
