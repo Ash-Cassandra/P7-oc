@@ -82,8 +82,19 @@ exports.modifyBook = (req, res, next) => {
             if (book.userId != req.auth.userId) {
                 res.status(401).json({ message : 'Non autorisé'});
             } else {
+                const oldImagePath = book.imageUrl;
+
                 Book.updateOne({ _id: req.params.id}, { ...bookObject, _id: req.params.id})
-                .then(() => res.status(200).json({message : 'Livre modifié!'}))
+                .then(() => {
+                    if (req.file && oldImagePath) {
+                        const filename = oldImagePath.split('/image/')[1];
+            fs.unlink(`image/${filename}`, (err) => {
+              if (err) {
+                console.error('Echec suppression image :', err);
+              }
+            });
+          }
+                res.status(200).json({message : 'Livre modifié!'})})
                 .catch(error => res.status(401).json({ error }));
             }
         })
