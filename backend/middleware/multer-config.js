@@ -39,7 +39,7 @@ module.exports = {
       }
       // Utiliser Sharp pour redimensionner l'image
       sharp(req.file.path)
-        .resize(1200)
+        .resize(900)
         .webp()
         .toFile(req.file.path.split('.')[0] + '.webp')
         .then(function(info) {
