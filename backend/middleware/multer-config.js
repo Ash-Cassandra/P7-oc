@@ -33,9 +33,12 @@ module.exports = {
         return res.status(400).json({err});
       }
        // Vérifier si aucune image n'a été téléchargée
-       if (!req.file) {
+       if (!req.file && req.method === 'POST') {
         return res.status(400).json({ error: 'Veuillez fournir une image' });
-        
+      }
+      if (!req.file && req.method === 'PUT') {
+        console.log(req.method);
+        return next();
       }
       // Utiliser Sharp pour redimensionner l'image
       sharp(req.file.path)

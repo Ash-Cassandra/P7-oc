@@ -69,42 +69,43 @@ exports.bestRating = (req, res, next) => {
     
 
     exports.modifyBook = (req, res, next) => {
-        let pathImage = req.file ? req.file.path.split('.')[0] + '.webp' : null;
-      
-        const bookObject = req.file
-          ? {
-              ...JSON.parse(req.body.book),
-              imageUrl: `${req.protocol}://${req.get('host')}/${pathImage.replace('\\', '/')}`
+      let pathImage = req.file ? req.file.path.split('.')[0] + '.webp' : null;
+    
+      const bookObject = req.file
+        ? {
+            ...JSON.parse(req.body.book),
+            imageUrl: `${req.protocol}://${req.get('host')}/${pathImage.replace('\\', '/')}`
+          }
+        : { ...req.body };
+    
+      delete bookObject._userId;
+    
+      Book.findOne({ _id: req.params.id })
+        .then((book) => {
+          if (book.userId != req.auth.userId) {
+            res.status(401).json({ message: 'Non autorisé' });
+          } else {
+            // Vérifier si une nouvelle image a été téléchargée
+            if (pathImage) {
+              // Supprimer l'ancienne image
+              const imagePath = book.imageUrl.split(`${req.protocol}://${req.get('host')}/`)[1];
+              fs.unlink(imagePath, (err) => {
+                if (err) {
+                  console.error(err);
+                }
+              });
             }
-          : { ...req.body };
-      
-        delete bookObject._userId;
-      
-        Book.findOne({ _id: req.params.id })
-          .then((book) => {
-            if (book.userId != req.auth.userId) {
-              res.status(401).json({ message: 'Non autorisé' });
-            } else {
-              // Vérifier si une nouvelle image a été téléchargée
-              if (pathImage) {
-                // Supprimer l'ancienne image
-                const imagePath = book.imageUrl.split(`${req.protocol}://${req.get('host')}/`)[1];
-                fs.unlink(imagePath, (err) => {
-                  if (err) {
-                    console.error(err);
-                  }
-                });
-              }
-      
-              Book.updateOne({ _id: req.params.id }, { ...bookObject, _id: req.params.id })
-                .then(() => res.status(200).json({ message: 'Livre modifié!' }))
-                .catch((error) => res.status(401).json({ error }));
-            }
-          })
-          .catch((error) => {
-            res.status(400).json({ error });
-          });
-      };
+    
+            Book.updateOne({ _id: req.params.id }, { ...bookObject, _id: req.params.id })
+              .then(() => res.status(200).json({ message: 'Livre modifié!' }))
+              .catch((error) => res.status(401).json({ error }));
+          }
+        })
+        .catch((error) => {
+          res.status(400).json({ error });
+        });
+    };
+    
       
     
       
